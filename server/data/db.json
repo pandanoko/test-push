@@ -7,6 +7,18 @@
     {
       "id": "043ee342-f29d-4259-85d4-e5df1ff7b2ea",
       "username": "ele"
+    },
+    {
+      "id": "62c25e73-18be-42d0-8e5b-62fe329176f4",
+      "username": "Falco"
+    },
+    {
+      "id": "bafba354-249e-48da-95b3-57e3a70ae133",
+      "username": "Olcaf"
+    },
+    {
+      "id": "96b6af55-7a70-44e7-a1d0-44d5c6c377c4",
+      "username": "Oclaf"
     }
   ],
   "messages": [
@@ -121,6 +133,97 @@
       "to": "ele",
       "text": "messaggio",
       "ts": 1761056970180
+    },
+    {
+      "id": "299c04e2-93b0-4101-a4cd-8292981aac69",
+      "from": "Olcaf",
+      "to": "Falco",
+      "text": "Buongiorno >:C",
+      "ts": 1761121604457
+    },
+    {
+      "id": "974a01ab-7fc9-4b4e-b5ec-ed4348a1b0ab",
+      "from": "Olcaf",
+      "to": "Falco",
+      "text": "Ao",
+      "ts": 1761121687950
+    },
+    {
+      "id": "fb7aef2a-80ce-4aad-9c6c-61b8793354d4",
+      "from": "Falco",
+      "to": "Olcaf",
+      "text": "Buongiorno",
+      "ts": 1761121733733
+    },
+    {
+      "id": "b873efef-98d9-4f90-987d-aff74c7c3ebf",
+      "from": "Olcaf",
+      "to": "Falco",
+      "text": "Come va?",
+      "ts": 1761121745084
+    },
+    {
+      "id": "af4303d1-97d2-4d0d-9b03-f0a030b04a06",
+      "from": "Olcaf",
+      "to": "Falco",
+      "text": "Male",
+      "ts": 1761121752920
+    },
+    {
+      "id": "73059e88-ed12-48f8-b5b8-b2a2a5291be9",
+      "from": "Olcaf",
+      "to": "Falco",
+      "text": "Due secondi?",
+      "ts": 1761121838091
+    },
+    {
+      "id": "c54ac2bf-5ea3-4a74-95d4-9f57ec56be05",
+      "from": "Falco",
+      "to": "Olcaf",
+      "text": "Due secondi :0",
+      "ts": 1761122034294
+    },
+    {
+      "id": "c7fda8f3-2da8-4125-96e4-932ef450b026",
+      "from": "Olcaf",
+      "to": "Falco",
+      "text": "Pronto?",
+      "ts": 1761122051080
+    },
+    {
+      "id": "a97d1667-93f0-4cca-8bfe-7664b01d026c",
+      "from": "Falco",
+      "to": "Olcaf",
+      "text": "Ma non sono due secondi",
+      "ts": 1761122064681
+    },
+    {
+      "id": "5fdabee9-ed30-4732-a91f-036cf48dbeb0",
+      "from": "Oclaf",
+      "to": "Falco",
+      "text": "Pusha?",
+      "ts": 1761129751470
+    },
+    {
+      "id": "561f7a93-cd7d-49f7-a83f-dee34d460f18",
+      "from": "Oclaf",
+      "to": "Falco",
+      "text": "Ho detto pusha?",
+      "ts": 1761129795018
+    },
+    {
+      "id": "d934cc1b-a6b0-41f3-af86-64471b89b4fd",
+      "from": "Falco",
+      "to": "Oclaf",
+      "text": "Ciao :)",
+      "ts": 1761129851039
+    },
+    {
+      "id": "c17f40d0-9872-45ef-8a63-2afb46f3eeab",
+      "from": "Oclaf",
+      "to": "Falco",
+      "text": "Mortacci, non me l'aspettavo",
+      "ts": 1761129862243
     }
   ],
   "subscriptions": []

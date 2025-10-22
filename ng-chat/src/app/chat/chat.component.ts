@@ -1,9 +1,11 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, OnDestroy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth.service';
 import { PushService } from '../core/push.service';
+import { WebSocketService, WebSocketMessage } from '../core/websocket.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-chat',
@@ -107,9 +109,18 @@ import { PushService } from '../core/push.service';
             </div>
             <div class="flex-1">
               <div class="font-semibold text-slate-800">{{ withUser() }}</div>
-              <div class="text-xs text-green-500 flex items-center">
-                <span class="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
-                Online
+              <div class="text-xs flex items-center">
+                <span 
+                  class="w-2 h-2 rounded-full mr-2"
+                  [class.bg-green-500]="isWebSocketConnected()"
+                  [class.bg-red-500]="!isWebSocketConnected()"
+                ></span>
+                <span 
+                  [class.text-green-500]="isWebSocketConnected()"
+                  [class.text-red-500]="!isWebSocketConnected()"
+                >
+                  {{ isWebSocketConnected() ? 'Real-time' : 'Disconnected' }}
+                </span>
               </div>
             </div>
           </div>
@@ -178,24 +189,6 @@ import { PushService } from '../core/push.service';
 
         <!-- Form invio messaggio -->
         <div class="bg-white border-t border-slate-200 p-4">
-          <!-- Pulsante test notifiche -->
-          <button
-            (click)="testNotification()"
-            class="mb-3 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors flex items-center space-x-2"
-          >
-            <span>🔔</span>
-            <span>Test Notifica</span>
-          </button>
-
-          <!-- Pulsante test notifica forzata -->
-          <button
-            (click)="testForceNotification()"
-            class="mb-3 ml-3 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors flex items-center space-x-2"
-          >
-            <span>🚨</span>
-            <span>Forza Notifica</span>
-          </button>
-
           <form class="flex space-x-3" (ngSubmit)="send()">
             <div class="flex-1 relative">
               <input
@@ -321,33 +314,138 @@ import { PushService } from '../core/push.service';
   `,
   imports: [CommonModule, FormsModule],
 })
-export class ChatComponent {
+export class ChatComponent implements OnDestroy {
   private api = inject(ApiService);
   private auth = inject(AuthService);
   private pushService = inject(PushService);
+  private wsService = inject(WebSocketService);
+  
   me = this.auth.username!;
   users: { username: string }[] = [];
   messages: any[] = [];
   text = '';
   withUser = signal<string | null>(null);
   showMobileSidebar = false;
+  isWebSocketConnected = signal<boolean>(false);
 
-  // Per tracciare i messaggi esistenti e rilevare i nuovi
-  private existingMessageIds = new Set<string>();
+  // Subscriptions for cleanup
+  private subscriptions: Subscription[] = [];
 
   constructor() {
     this.refreshUsers();
-    // Polling minimale per nuovi messaggi (ogni 2s)
-    setInterval(() => this.reloadMessages(), 2000);
+    this.initializeWebSocket();
+  }
+
+  ngOnDestroy(): void {
+    // Clean up subscriptions
+    this.subscriptions.forEach(sub => sub.unsubscribe());
+    // Disconnect WebSocket
+    this.wsService.disconnect();
+  }
+
+  /**
+   * Initialize WebSocket connection and listeners
+   */
+  private initializeWebSocket(): void {
+    console.log('🔌 Initializing WebSocket in ChatComponent');
+    
+    // Connect to WebSocket
+    this.wsService.connect();
+
+    // Listen for connection status changes
+    const connectionSub = this.wsService.getConnectionStatus().subscribe(
+      (connected) => {
+        console.log('🔌 WebSocket connection status:', connected);
+        this.isWebSocketConnected.set(connected);
+        
+        if (connected) {
+          console.log('✅ WebSocket connected - real-time messaging enabled');
+          // Load messages for current conversation when connected
+          const currentUser = this.withUser();
+          if (currentUser) {
+            this.reloadMessages();
+          }
+        } else {
+          console.log('❌ WebSocket disconnected - falling back to HTTP polling');
+          // Could implement HTTP polling fallback here if needed
+        }
+      }
+    );
+
+    // Listen for WebSocket messages
+    const messageSub = this.wsService.getMessages().subscribe(
+      (wsMessage: WebSocketMessage) => {
+        console.log('📨 WebSocket message received in ChatComponent:', wsMessage);
+        
+        switch (wsMessage.type) {
+          case 'connected':
+            console.log('✅ WebSocket connection confirmed');
+            break;
+            
+          case 'new_message':
+            this.handleNewMessage(wsMessage.message);
+            break;
+            
+          case 'message_sent':
+            console.log('✅ Message sent confirmation:', wsMessage.messageId);
+            // Optionally update UI to show message as sent
+            break;
+            
+          case 'error':
+            console.error('💥 WebSocket error:', wsMessage.error);
+            break;
+        }
+      }
+    );
+
+    this.subscriptions.push(connectionSub, messageSub);
+  }
+
+  /**
+   * Handle incoming WebSocket message
+   */
+  private handleNewMessage(message: any): void {
+    console.log('💬 Handling new message:', message);
+    
+    const currentUser = this.withUser();
+    
+    // Check if message is for current conversation
+    if (currentUser && 
+        ((message.from === currentUser && message.to === this.me) ||
+         (message.from === this.me && message.to === currentUser))) {
+      
+      // Check if message already exists (avoid duplicates)
+      const messageExists = this.messages.some(m => 
+        m.id === message.id || 
+        (m.from === message.from && m.to === message.to && m.ts === message.ts && m.text === message.text)
+      );
+      
+      if (!messageExists) {
+        console.log('📝 Adding new message to conversation');
+        this.messages.push(message);
+        this.messages.sort((a, b) => a.ts - b.ts); // Keep messages sorted by timestamp
+        
+        // Show browser notification if message is from someone else and window not focused
+        if (message.from !== this.me && !document.hasFocus()) {
+          console.log('🔔 Showing notification for new message');
+          this.pushService.showMessageNotification(message.from, message.text);
+        }
+      } else {
+        console.log('⚠️ Message already exists, skipping');
+      }
+    } else {
+      console.log('ℹ️ Message not for current conversation, ignoring');
+    }
   }
 
   refreshUsers() {
     this.api.users().subscribe((u) => (this.users = u));
   }
+  
   select(u: string) {
+    console.log('👤 Selecting user:', u);
     this.withUser.set(u);
-    // Resetta gli ID dei messaggi esistenti quando cambi utente
-    this.existingMessageIds.clear();
+    // Load messages for the selected conversation
     this.reloadMessages();
   }
 
@@ -355,38 +453,55 @@ export class ChatComponent {
     this.select(u);
     this.showMobileSidebar = false;
   }
+  /**
+   * Load messages for current conversation from API
+   * This is now used primarily for initial load and when WebSocket is not available
+   */
   reloadMessages() {
     const u = this.withUser();
     if (!u) return;
 
+    console.log('📨 Loading messages for conversation with:', u);
     this.api.getMessages(u).subscribe((msgs) => {
-      // Trova nuovi messaggi confrontando con gli ID esistenti
-      const newMessages = msgs.filter((msg) => {
-        const msgId = this.createMessageId(msg);
-        return !this.existingMessageIds.has(msgId) && msg.from !== this.me;
-      });
-
-      // Mostra notifiche per i nuovi messaggi (solo se non sono da me)
-      newMessages.forEach((msg) => {
-        this.showMessageNotification(msg);
-      });
-
-      // Aggiorna il set degli ID esistenti
-      this.existingMessageIds.clear();
-      msgs.forEach((msg) => {
-        this.existingMessageIds.add(this.createMessageId(msg));
-      });
-
+      console.log('📨 Received', msgs.length, 'messages from API');
       this.messages = msgs;
     });
   }
+  /**
+   * Send message - try WebSocket first, fallback to HTTP
+   */
   send() {
     const u = this.withUser();
     if (!u || !this.text.trim()) return;
-    this.api.sendMessage(u, this.text.trim()).subscribe((m) => {
+
+    const messageText = this.text.trim();
+    console.log('📤 Sending message to:', u, 'Text:', messageText);
+
+    // Try WebSocket first
+    if (this.isWebSocketConnected() && this.wsService.sendMessage(u, messageText)) {
+      console.log('✅ Message sent via WebSocket');
       this.text = '';
-      this.reloadMessages();
-    });
+      
+      // Add message to local state immediately for better UX
+      const tempMessage = {
+        id: `temp-${Date.now()}`,
+        from: this.me,
+        to: u,
+        text: messageText,
+        ts: Date.now()
+      };
+      this.messages.push(tempMessage);
+    } else {
+      // Fallback to HTTP API
+      console.log('📡 Falling back to HTTP API for message sending');
+      this.api.sendMessage(u, messageText).subscribe((m) => {
+        console.log('✅ Message sent via HTTP:', m);
+        this.text = '';
+        // Add message to local state
+        this.messages.push(m);
+        this.messages.sort((a, b) => a.ts - b.ts);
+      });
+    }
   }
 
   trackMessage(index: number, message: any): any {
@@ -402,6 +517,7 @@ export class ChatComponent {
     });
   }
 
+  // Debug methods for testing notifications
   async testNotification() {
     console.log('Testing notification...');
     const result = await this.pushService.testBasicNotification();
@@ -411,92 +527,6 @@ export class ChatComponent {
       alert(`✅ ${result.message}`);
     } else {
       alert(`❌ ${result.message}`);
-    }
-  }
-
-  async testForceNotification() {
-    console.log('🚨 FORZO UNA NOTIFICA - IGNORO TUTTE LE CONDIZIONI');
-    
-    if (Notification.permission !== 'granted') {
-      alert('❌ Permessi non concessi. Clicca prima "Test Notifica"');
-      return;
-    }
-
-    try {
-      // Prova anche con un suono
-      const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvGIcBSqG0fPTgjkNBIK+9sWRQQUXW7ng5Z9PFAlUnOMwwWUcBjqQ2O+2tI8FGCGnzOvUhzsIIHHI7N2Lq5w='); 
-      audio.play().catch(() => {}); // Ignora errori audio
-
-      const notification = new Notification('🚨 NOTIFICA FORZATA', {
-        body: 'Questa notifica dovrebbe apparire SEMPRE se i permessi sono OK!',
-        tag: 'force-test',
-        icon: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-        requireInteraction: true  // Forza l'interazione
-      });
-
-      let notificationShown = false;
-
-      notification.onclick = () => {
-        console.log('Notifica forzata cliccata!');
-        window.focus();
-        notification.close();
-      };
-
-      notification.onshow = () => {
-        console.log('✅ Notifica forzata MOSTRATA!');
-        notificationShown = true;
-        // Aspetta un po' prima di dire che è mostrata
-        setTimeout(() => {
-          if (notificationShown) {
-            alert('✅ Notifica mostrata! Se non la vedi, controlla:\n1. Angolo in basso a destra\n2. Centro notifiche Windows\n3. Impostazioni Chrome');
-          }
-        }, 1000);
-      };
-
-      notification.onerror = (error) => {
-        console.error('❌ Errore notifica forzata:', error);
-        alert('❌ Errore nella notifica forzata: ' + error);
-      };
-
-      // Prova a vibrare se supportato
-      if ('vibrate' in navigator) {
-        navigator.vibrate([200, 100, 200]);
-      }
-
-      setTimeout(() => {
-        if (!notificationShown) {
-          alert('⚠️ La notifica è stata creata ma onshow non è stato chiamato. Problema del browser/sistema.');
-        }
-        notification.close();
-      }, 10000);
-
-    } catch (error) {
-      console.error('💥 Errore creazione notifica forzata:', error);
-      alert('💥 Errore: ' + error);
-    }
-  }
-
-  // Crea un ID univoco per ogni messaggio per rilevare i nuovi
-  private createMessageId(message: any): string {
-    return `${message.from}-${message.to}-${message.timestamp}-${message.text}`;
-  }
-
-  // Mostra notifica per un nuovo messaggio
-  private async showMessageNotification(message: any) {
-    console.log('💌 === DEBUG NOTIFICA NUOVO MESSAGGIO ===');
-    console.log('1. Messaggio ricevuto:', message);
-    console.log('2. Focus finestra:', document.hasFocus());
-    console.log('3. È da me?', message.from === this.me);
-    
-    // Solo se la finestra non è in focus e il messaggio non è da me
-    if (!document.hasFocus() && message.from !== this.me) {
-      console.log('4. Condizioni OK - Mostro notifica...');
-      const result = await this.pushService.showMessageNotification(message.from, message.text);
-      console.log('5. Risultato notifica:', result);
-    } else {
-      console.log('4. Condizioni NON OK - NON mostro notifica');
-      if (document.hasFocus()) console.log('   - Finestra in focus');
-      if (message.from === this.me) console.log('   - Messaggio da me stesso');
     }
   }
 }

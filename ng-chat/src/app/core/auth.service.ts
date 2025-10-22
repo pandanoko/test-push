@@ -28,4 +28,8 @@ export class AuthService {
   authHeader() {
     return { headers: { Authorization: `Bearer ${this.token}` } };
   }
+
+  getToken(): string | null {
+    return this.token;
+  }
 }
