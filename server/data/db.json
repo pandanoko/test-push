@@ -1,0 +1,127 @@
+{
+  "users": [
+    {
+      "id": "f173a637-789a-449d-b305-16d4e9e90508",
+      "username": "sara"
+    },
+    {
+      "id": "043ee342-f29d-4259-85d4-e5df1ff7b2ea",
+      "username": "ele"
+    }
+  ],
+  "messages": [
+    {
+      "id": "d3d47955-2b2e-4d3a-8dd0-8c9af440dd86",
+      "from": "ele",
+      "to": "sara",
+      "text": "ehiii",
+      "ts": 1761044239028
+    },
+    {
+      "id": "e75eb4fd-2bde-47ee-bae0-06d509e2e402",
+      "from": "ele",
+      "to": "sara",
+      "text": "ciaooo",
+      "ts": 1761044270191
+    },
+    {
+      "id": "8842ebb6-0ced-484f-bdd5-1794423bb934",
+      "from": "ele",
+      "to": "sara",
+      "text": "prova",
+      "ts": 1761044358406
+    },
+    {
+      "id": "3334a431-6fe3-4344-8e1f-1c235adcbbab",
+      "from": "sara",
+      "to": "ele",
+      "text": "ueuee",
+      "ts": 1761046803663
+    },
+    {
+      "id": "76def0be-5ab1-49b1-bc74-34d177a08579",
+      "from": "ele",
+      "to": "sara",
+      "text": "ciao",
+      "ts": 1761046850760
+    },
+    {
+      "id": "bc4f72c0-b4e4-45cf-8080-e71360ae3b37",
+      "from": "ele",
+      "to": "sara",
+      "text": "ciaoo",
+      "ts": 1761048866332
+    },
+    {
+      "id": "2e56d173-268b-4a38-a0fd-2b4bfaa919e8",
+      "from": "ele",
+      "to": "sara",
+      "text": "che belloooo",
+      "ts": 1761049533164
+    },
+    {
+      "id": "e25f3858-77b8-4c7a-9900-b1598827f23c",
+      "from": "sara",
+      "to": "ele",
+      "text": "prova notifica",
+      "ts": 1761049561277
+    },
+    {
+      "id": "040684ad-7e5a-43c3-b508-3b12cd65a66e",
+      "from": "ele",
+      "to": "sara",
+      "text": "asd",
+      "ts": 1761050594399
+    },
+    {
+      "id": "6c44ba39-76ba-451b-8bc9-636b33fa7f7d",
+      "from": "sara",
+      "to": "ele",
+      "text": "prova",
+      "ts": 1761052556746
+    },
+    {
+      "id": "3bf179b7-2211-4aae-b07a-afe966f45acf",
+      "from": "ele",
+      "to": "sara",
+      "text": "un'altra prova",
+      "ts": 1761052583034
+    },
+    {
+      "id": "f5c6c072-a4e5-414e-931c-b5753d19f581",
+      "from": "sara",
+      "to": "ele",
+      "text": "ciao ciao",
+      "ts": 1761052603450
+    },
+    {
+      "id": "8d207433-6d71-4aa3-948e-44bf836ffe7e",
+      "from": "sara",
+      "to": "ele",
+      "text": "aaaaaaaa",
+      "ts": 1761056363974
+    },
+    {
+      "id": "bed4b2e6-5a57-4b72-b62b-5e2c453566cb",
+      "from": "sara",
+      "to": "ele",
+      "text": "mi leggi?",
+      "ts": 1761056465345
+    },
+    {
+      "id": "7b684876-ed81-4b08-b1d1-bbefe5b05c13",
+      "from": "sara",
+      "to": "ele",
+      "text": "mi leggiiii",
+      "ts": 1761056515530
+    },
+    {
+      "id": "1f4cc73e-1daa-4981-836a-7ac372bcb997",
+      "from": "sara",
+      "to": "ele",
+      "text": "messaggio",
+      "ts": 1761056970180
+    }
+  ],
+  "subscriptions": []
+}
